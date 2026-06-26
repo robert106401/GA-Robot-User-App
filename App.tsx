@@ -94,7 +94,8 @@ import { getTierVisual } from "./src/tierVisuals";
 import { AutoReloadSettings } from "./src/autoReload";
 import { BonusSummary, calculateBonusSummary } from "./src/bonusSummary";
 
-type TabKey = "home" | "category" | "scan" | "gift" | "rewards" | "map" | "account";
+type BottomTabKey = "home" | "category" | "scan" | "gift" | "rewards";
+type RootRouteKey = BottomTabKey | "map" | "account";
 type ExpToast = {
   amount: number;
   title: string;
@@ -103,7 +104,7 @@ type ExpToast = {
 };
 
 const tabs: Array<{
-  key: TabKey;
+  key: BottomTabKey;
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
   activeIcon: keyof typeof Ionicons.glyphMap;
@@ -115,7 +116,7 @@ const tabs: Array<{
   { key: "rewards", label: "Rewards", icon: "sparkles-outline", activeIcon: "sparkles" }
 ];
 
-const rootTabScrollKeys: Partial<Record<TabKey, string>> = {
+const rootTabScrollKeys: Partial<Record<RootRouteKey, string>> = {
   home: "home",
   category: "order",
   scan: "scan-pay",
@@ -272,8 +273,8 @@ type InstantPointsBenefit = {
 };
 
 function renderScreen(
-  activeTab: TabKey,
-  setActiveTab: (tab: TabKey) => void,
+  activeTab: RootRouteKey,
+  setActiveTab: (tab: RootRouteKey) => void,
   activeVMId: string | null,
   setActiveVMId: (vmId: string | null) => void,
   activeSkuId: string | null,
@@ -456,7 +457,7 @@ function renderScreen(
     setIsTopUpOpen(false);
     setActivityTab(null);
   };
-  const openRootTab = (tab: TabKey) => {
+  const openRootTab = (tab: RootRouteKey) => {
     setActiveTab(tab);
     setActiveVMId(null);
     setActiveSkuId(null);
@@ -1172,9 +1173,9 @@ function renderScreen(
 }
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<TabKey>("home");
+  const [activeTab, setActiveTab] = useState<RootRouteKey>("home");
   const [isAuthFlowImmersive, setIsAuthFlowImmersive] = useState(false);
-  const [rootTabResetVersions, setRootTabResetVersions] = useState<Record<TabKey, number>>({
+  const [rootTabResetVersions, setRootTabResetVersions] = useState<Record<RootRouteKey, number>>({
     home: 0,
     category: 0,
     scan: 0,
@@ -1879,7 +1880,7 @@ export default function App() {
     });
   }
 
-  function switchTab(tab: TabKey) {
+  function switchTab(tab: BottomTabKey) {
     if (tab === activeTab) {
       const scrollKey = rootTabScrollKeys[tab];
       if (scrollKey) {
@@ -2107,7 +2108,8 @@ export default function App() {
             },
             () => {
               handleXpAction("nearby-deals", `nearby-deals:${getLocalDateKey()}`);
-              switchTab("map");
+              resetNavigationSurfaces();
+              setActiveTab("map");
             },
             () => {
               switchTab("category");
