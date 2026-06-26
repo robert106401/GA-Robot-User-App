@@ -23,6 +23,7 @@ import { AutoReloadSettings, autoReloadAmounts, autoReloadThresholds } from "../
 import { BonusSummary } from "../bonusSummary";
 import type { ProductDisplayArea, ProductDisplayMode, ProductDisplayOverride, ProductDisplayPreferences } from "../state/appState";
 import { APP_BUILD_TEXT, APP_SHORT_VERSION_LABEL, APP_VERSION_LABEL, APP_VERSION_TEXT } from "../version";
+import { AuthFlowDemoScreen } from "./AuthFlowDemoScreen";
 
 export type Profile = {
   name: string;
@@ -79,9 +80,9 @@ const pointsRewardOptions: PointsRewardOption[] = [
   }
 ];
 
-type MeScreenProps = {
+type AccountTabScreenProps = {
   profile: Profile;
-  initialPage?: MePage | null;
+  initialPage?: AccountPage | null;
   onBack?: () => void;
   backLabel?: string;
   onSaveProfile: (profile: Profile) => void;
@@ -125,9 +126,10 @@ type MeScreenProps = {
   pointsInstantRedeemEnabled: boolean;
   onChangePointsInstantRedeem: (enabled: boolean) => void;
   onResetDemoState: () => void;
+  onAuthFlowImmersiveChange?: (isImmersive: boolean) => void;
 };
 
-type MePage =
+type AccountPage =
   | "points"
   | "payment-methods"
   | "auto-reload"
@@ -137,9 +139,10 @@ type MePage =
   | "notification-preferences"
   | "wallet-payments"
   | "account"
+  | "auth-flow-demo"
   | "about";
 
-export function MeScreen({
+export function AccountTabScreen({
   profile,
   initialPage = null,
   onBack,
@@ -184,10 +187,11 @@ export function MeScreen({
   onChangeQaCashierFailure,
   pointsInstantRedeemEnabled,
   onChangePointsInstantRedeem,
-  onResetDemoState
-}: MeScreenProps) {
-  const [activePage, setActivePage] = useState<MePage | null>(initialPage);
-  const [accountReturnPage, setAccountReturnPage] = useState<MePage | null>(null);
+  onResetDemoState,
+  onAuthFlowImmersiveChange
+}: AccountTabScreenProps) {
+  const [activePage, setActivePage] = useState<AccountPage | null>(initialPage);
+  const [accountReturnPage, setAccountReturnPage] = useState<AccountPage | null>(null);
   const [notificationPreferences, setNotificationPreferences] = useState({
     inboxMessages: true,
     tipping: false,
@@ -200,7 +204,7 @@ export function MeScreen({
     setAccountReturnPage(null);
   }, [initialPage]);
 
-  const openAccountPage = (page: MePage, returnPage: MePage | null = null) => {
+  const openAccountPage = (page: AccountPage, returnPage: AccountPage | null = null) => {
     setAccountReturnPage(returnPage);
     setActivePage(page);
   };
@@ -318,6 +322,16 @@ export function MeScreen({
   }
   if (activePage === "about") {
     return <AboutScreen onBack={() => setActivePage(null)} onResetDemoState={onResetDemoState} />;
+  }
+  if (activePage === "auth-flow-demo") {
+    return (
+      <AuthFlowDemoScreen
+        profile={profile}
+        onBack={() => setActivePage(null)}
+        onComplete={onBack ?? (() => setActivePage(null))}
+        onImmersiveChange={onAuthFlowImmersiveChange}
+      />
+    );
   }
   if (activePage === "notification-preferences") {
     return (
@@ -438,6 +452,12 @@ export function MeScreen({
       />
 
       <SectionHeader title="Development Tools" />
+      <MenuItem
+        icon="person-add-outline"
+        label="Auth Flow Demo"
+        value="Sign-in, profile, permissions"
+        onPress={() => setActivePage("auth-flow-demo")}
+      />
       <InfoListItem
         contained
         icon="sparkles-outline"

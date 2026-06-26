@@ -44,7 +44,7 @@ type HomeScreenProps = {
   userName: string;
   onOpenSku: (skuId: string) => void;
   onOpenCart: () => void;
-  onOpenMe: () => void;
+  onOpenAccount: () => void;
   onOpenCoupons: () => void;
   onOpenPartnerOffers: (offerId?: string) => void;
   onOpenTopUp: () => void;
@@ -81,7 +81,7 @@ export function HomeScreen({
   userName,
   onOpenSku,
   onOpenCart,
-  onOpenMe,
+  onOpenAccount,
   onOpenCoupons,
   onOpenPartnerOffers,
   onOpenTopUp,
@@ -161,7 +161,7 @@ export function HomeScreen({
             ) : null}
             <TouchableOpacity
               style={styles.profileButton}
-              onPress={onOpenMe}
+              onPress={onOpenAccount}
               activeOpacity={0.84}
               accessibilityRole="button"
               accessibilityLabel="Open account"

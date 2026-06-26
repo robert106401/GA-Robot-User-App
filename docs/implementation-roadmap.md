@@ -3,7 +3,7 @@
 ## Phase 1: Product Prototype
 
 - 建立 Expo + React Native 单仓项目
-- 完成 HOME、SKU、扫码、VM Map、Me 的页面骨架
+- 完成 HOME、SKU、扫码、VM Map、Account 的页面骨架
 - 使用 mock data 模拟会员资产、SKU、VM、券和营销内容
 - 明确视觉风格、颜色、卡片密度和导航结构
 
@@ -42,7 +42,7 @@ POST /v1/scan/resolve
 POST /v1/orders
 POST /v1/payments
 GET  /v1/orders/{id}/dispense-status
-GET  /v1/me
+GET  /v1/account
 GET  /v1/wallet
 GET  /v1/app/version
 ```

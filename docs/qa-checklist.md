@@ -6,12 +6,12 @@
 - Tap Add to Cart and verify the temporary success message appears.
 - Open Cart, deselect and reselect items, remove one item, and verify totals update.
 - Checkout with App Wallet when balance is sufficient.
-- Verify a Ready to collect order is created and appears in Home pickup cards and Me → Activity → Orders.
+- Verify a Ready to collect order is created and appears in Home pickup cards and Account → Activity → Orders.
 - Open Order Detail and verify pickup code, countdown, paid amount, item quantity, payment method, and points.
 
 ## Top Up flow
 
-- Open Top Up from Home or Me.
+- Open Top Up from Home or Account.
 - Switch amount cards and payment method.
 - Tap Top Up and verify the loading state prevents duplicate taps.
 - Verify Cash Balance, Bonus Balance, payment history, and wallet history update.

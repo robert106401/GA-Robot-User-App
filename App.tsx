@@ -5,7 +5,7 @@ import { createImmediateActions, HomeScreen, NeedsAttentionScreen } from "./src/
 import { CategoryScreen } from "./src/screens/CategoryScreen";
 import { ScanPayScreen } from "./src/screens/ScanPayScreen";
 import { VMMapScreen } from "./src/screens/VMMapScreen";
-import { MeScreen, PartnerBenefitsScreen, PointsScreen, Profile } from "./src/screens/MeScreen";
+import { AccountTabScreen, PartnerBenefitsScreen, PointsScreen, Profile } from "./src/screens/AccountTabScreen";
 import { VMDetailScreen } from "./src/screens/VMDetailScreen";
 import { SkuDetailScreen } from "./src/screens/SkuDetailScreen";
 import { CartScreen } from "./src/screens/CartScreen";
@@ -94,7 +94,7 @@ import { getTierVisual } from "./src/tierVisuals";
 import { AutoReloadSettings } from "./src/autoReload";
 import { BonusSummary, calculateBonusSummary } from "./src/bonusSummary";
 
-type TabKey = "home" | "category" | "scan" | "gift" | "rewards" | "map" | "me";
+type TabKey = "home" | "category" | "scan" | "gift" | "rewards" | "map" | "account";
 type ExpToast = {
   amount: number;
   title: string;
@@ -122,7 +122,7 @@ const rootTabScrollKeys: Partial<Record<TabKey, string>> = {
   gift: "gift-home",
   rewards: "rewards",
   map: "vm-map",
-  me: "account-home"
+  account: "account-home"
 };
 
 const defaultProfile: Profile = {
@@ -333,8 +333,8 @@ function renderScreen(
   activePaymentPoints: number,
   setActivePaymentPoints: (points: number) => void,
   userProfile: Profile,
-  meInitialPage: "points" | null,
-  setMeInitialPage: (page: "points" | null) => void,
+  accountInitialPage: "points" | null,
+  setAccountInitialPage: (page: "points" | null) => void,
   setUserProfile: (profile: Profile) => void,
   checkoutItems: CartItem[] | null,
   setCheckoutItems: (items: CartItem[] | null) => void,
@@ -382,8 +382,8 @@ function renderScreen(
   toggleFavoriteSku: (skuId: string) => void,
   addToCart: (item: CartItem) => void,
   removeCartItem: (cartKey: string) => void,
-  meScrollY: number,
-  onMeScrollYChange: (offsetY: number) => void,
+  accountScrollY: number,
+  onAccountScrollYChange: (offsetY: number) => void,
   onOpenPickupOrders: () => void,
   onOpenMap: () => void,
   onViewAllProducts: () => void,
@@ -407,6 +407,7 @@ function renderScreen(
   pointsInstantRedeemEnabled: boolean,
   onChangePointsInstantRedeem: (enabled: boolean) => void,
   onResetDemoState: () => void,
+  onAuthFlowImmersiveChange: (isImmersive: boolean) => void,
   onOpenVmScanPayment: () => void
 ) {
   const openCheckout = (items: CartItem[]) => {
@@ -439,7 +440,7 @@ function renderScreen(
     setIsPointsOpen(false);
     setIsPartnerBenefitsOpen(false);
   };
-  const closeMeSurfaces = () => {
+  const closeAccountSurfaces = () => {
     setIsCouponListOpen(false);
     setActiveCouponAsset(null);
     setCouponInitialFilter("All");
@@ -467,7 +468,7 @@ function renderScreen(
     setCheckoutBenefitAsset(null);
     setCheckoutItems(null);
     closeHomeSurfaces();
-    closeMeSurfaces();
+    closeAccountSurfaces();
   };
   const checkoutBackLabel = pendingVmCheckoutOrder
     ? "Back to Scan & Pay"
@@ -493,7 +494,7 @@ function renderScreen(
           if (activeHomeOrderReturnTarget === "attention") {
             setIsAttentionOpen(true);
           } else if (activeHomeOrderReturnTarget === "orders") {
-            setActiveTab("me");
+            setActiveTab("account");
             setActivityReadyOnly(false);
             setActivityTab("Orders");
           }
@@ -718,9 +719,9 @@ function renderScreen(
           userName={userProfile.name}
           onOpenSku={setActiveSkuId}
           onOpenCart={() => setIsCartOpen(true)}
-          onOpenMe={() => {
-            setMeInitialPage(null);
-            openRootTab("me");
+          onOpenAccount={() => {
+            setAccountInitialPage(null);
+            openRootTab("account");
           }}
           onOpenCoupons={() => openCouponAssets()}
           onOpenPartnerOffers={(offerId) => {
@@ -859,7 +860,7 @@ function renderScreen(
               handleXpAction("daily-check-in", `daily-check-in:${getLocalDateKey()}`)
             }
             onOpenTopUp={() => {
-              closeMeSurfaces();
+              closeAccountSurfaces();
               setIsTopUpOpen(true);
             }}
             onOpenOrder={() => {
@@ -981,7 +982,7 @@ function renderScreen(
           xpBalance={xpBalance}
         />
       );
-    case "me":
+    case "account":
       if (activityTab) {
         return (
           <ActivityScreen
@@ -1041,7 +1042,7 @@ function renderScreen(
               handleXpAction("daily-check-in", `daily-check-in:${getLocalDateKey()}`)
             }
             onOpenTopUp={() => {
-              closeMeSurfaces();
+              closeAccountSurfaces();
               setIsTopUpOpen(true);
             }}
             onOpenOrder={() => {
@@ -1105,11 +1106,11 @@ function renderScreen(
         return <BenefitListScreen onBack={() => setIsBenefitListOpen(false)} backLabel="Back to Account" xpBalance={xpBalance} />;
       }
       return (
-          <MeScreen
+          <AccountTabScreen
             profile={userProfile}
-            initialPage={meInitialPage}
+            initialPage={accountInitialPage}
             onBack={() => {
-              closeMeSurfaces();
+              closeAccountSurfaces();
               setActiveTab("home");
             }}
             backLabel="Back to Home"
@@ -1124,11 +1125,11 @@ function renderScreen(
             onOpenTier={() => setIsTierOpen(true)}
           onOpenMissions={() => setIsMissionsOpen(true)}
           onOpenTopUp={() => {
-            closeMeSurfaces();
+            closeAccountSurfaces();
             setIsTopUpOpen(true);
           }}
           onOpenActivity={(tab) => {
-            closeMeSurfaces();
+            closeAccountSurfaces();
             setActivityReadyOnly(false);
             setActivityTab(tab);
           }}
@@ -1142,8 +1143,8 @@ function renderScreen(
           xpBalance={xpBalance}
           onRedeemPoints={handleRedeemPoints}
           claimedCouponCount={claimedCouponIds.length}
-          initialScrollY={meScrollY}
-          onScrollYChange={onMeScrollYChange}
+          initialScrollY={accountScrollY}
+          onScrollYChange={onAccountScrollYChange}
           themeId={themeId}
           onSelectTheme={onSelectTheme}
           productDisplayPreferences={productDisplayPreferences}
@@ -1164,6 +1165,7 @@ function renderScreen(
           pointsInstantRedeemEnabled={pointsInstantRedeemEnabled}
           onChangePointsInstantRedeem={onChangePointsInstantRedeem}
           onResetDemoState={onResetDemoState}
+          onAuthFlowImmersiveChange={onAuthFlowImmersiveChange}
         />
       );
   }
@@ -1171,6 +1173,7 @@ function renderScreen(
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabKey>("home");
+  const [isAuthFlowImmersive, setIsAuthFlowImmersive] = useState(false);
   const [rootTabResetVersions, setRootTabResetVersions] = useState<Record<TabKey, number>>({
     home: 0,
     category: 0,
@@ -1178,7 +1181,7 @@ export default function App() {
     gift: 0,
     rewards: 0,
     map: 0,
-    me: 0
+    account: 0
   });
   const [activeVMId, setActiveVMId] = useState<string | null>(null);
   const [activeSkuId, setActiveSkuId] = useState<string | null>(null);
@@ -1209,7 +1212,7 @@ export default function App() {
   const [dismissedAttentionIds, setDismissedAttentionIds] = useState<string[]>([]);
   const [activityTab, setActivityTab] = useState<ActivityTab | null>(null);
   const [activityReadyOnly, setActivityReadyOnly] = useState(false);
-  const [meInitialPage, setMeInitialPage] = useState<"points" | null>(null);
+  const [accountInitialPage, setAccountInitialPage] = useState<"points" | null>(null);
   const [activeHomeOrderId, setActiveHomeOrderId] = useState<string | null>(null);
   const [activeHomeOrderReturnTarget, setActiveHomeOrderReturnTarget] = useState<OrderDetailReturnTarget>("home");
   const [activePaymentMode, setActivePaymentMode] = useState<PaymentMethodMode | null>(null);
@@ -1260,7 +1263,7 @@ export default function App() {
   const walletBalance = cashBalance + rewardsBonusBalance;
   const walletBalances = { cash: cashBalance, rewardsBonus: rewardsBonusBalance };
   const bonusSummary = calculateBonusSummary(walletHistory, walletBalances);
-  const meScrollYRef = useRef(0);
+  const accountScrollYRef = useRef(0);
   const expToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const appToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const vmCompletionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1562,7 +1565,7 @@ export default function App() {
         setPendingVmCheckoutOrder(null);
         setIsCartOpen(false);
         setActiveSkuId(null);
-        setActiveTab("me");
+        setActiveTab("account");
         setActivityReadyOnly(false);
         setActivityTab("Orders");
         setActiveHomeOrderReturnTarget("orders");
@@ -1835,7 +1838,7 @@ export default function App() {
     setIsMissionsOpen(false);
     setIsPointsOpen(false);
     setIsPartnerBenefitsOpen(false);
-    setMeInitialPage(null);
+    setAccountInitialPage(null);
     setActivityTab(null);
     setActivityReadyOnly(false);
     setActiveHomeOrderId(null);
@@ -2043,8 +2046,8 @@ export default function App() {
             activePaymentPoints,
             setActivePaymentPoints,
             userProfile,
-            meInitialPage,
-            setMeInitialPage,
+            accountInitialPage,
+            setAccountInitialPage,
             setUserProfile,
             checkoutItems,
             setCheckoutItems,
@@ -2092,13 +2095,13 @@ export default function App() {
             toggleFavoriteSku,
             addToCart,
             removeCartItem,
-            meScrollYRef.current,
+            accountScrollYRef.current,
             (offsetY) => {
-              meScrollYRef.current = offsetY;
+              accountScrollYRef.current = offsetY;
             },
             () => {
               resetNavigationSurfaces();
-              setActiveTab("me");
+              setActiveTab("account");
               setActivityReadyOnly(true);
               setActivityTab("Orders");
             },
@@ -2129,6 +2132,7 @@ export default function App() {
             pointsInstantRedeemEnabled,
             setPointsInstantRedeemEnabled,
             handleResetDemoState,
+            setIsAuthFlowImmersive,
             handleVmScanPayment
           )}
         </View>
@@ -2307,7 +2311,7 @@ export default function App() {
           </TouchableOpacity>
         </View>
       ) : null}
-      {!isPaymentFlowOpen ? <View style={[styles.tabBar, { backgroundColor: colors.surface, borderTopColor: colors.line }]}>
+      {!isPaymentFlowOpen && !isAuthFlowImmersive ? <View style={[styles.tabBar, { backgroundColor: colors.surface, borderTopColor: colors.line }]}>
         {tabs.map((tab) => {
           const isActive = activeTab === tab.key;
 
