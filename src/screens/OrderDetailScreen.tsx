@@ -32,6 +32,7 @@ export function OrderDetailScreen({ order, onBack, backLabel = "Back to Orders" 
   const displayStatus = isExpired ? "Expired" : order.status;
   const statusTone = getOrderStatusTone(displayStatus);
   const orderType = isPreOrder ? "Prepaid Order" : "VM Order";
+  const itemModeLabel = isPreOrder ? "prepaid" : "paid at VM";
 
   useEffect(() => {
     if (!canCollect || !order.pickupExpiresAtEpoch) {
@@ -64,7 +65,7 @@ export function OrderDetailScreen({ order, onBack, backLabel = "Back to Orders" 
         </View>
         <View style={styles.orderHeroHeader}>
           <View style={styles.orderHeroTitleGroup}>
-            <Text style={styles.orderHeroEyebrow}>{formatOrderItemCount(order.itemCount)} prepaid</Text>
+            <Text style={styles.orderHeroEyebrow}>{formatOrderItemCount(order.itemCount)} {itemModeLabel}</Text>
             <Text style={styles.orderHeroTitle} numberOfLines={2}>{order.title}</Text>
           </View>
           <View style={styles.orderHeroStatus}>

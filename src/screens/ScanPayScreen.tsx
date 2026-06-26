@@ -1,27 +1,94 @@
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AppCard } from "../components/AppCard";
 import { Screen } from "../components/Screen";
 import { colors } from "../theme";
 import { productCopy } from "../productCopy";
 
-export function ScanPayScreen() {
+type ScanPayScreenProps = {
+  onVmScanSuccess: () => void;
+};
+
+type ScanState = "idle" | "scanning" | "validated";
+
+export function ScanPayScreen({ onVmScanSuccess }: ScanPayScreenProps) {
+  const [scanState, setScanState] = useState<ScanState>("idle");
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isScanning = scanState === "scanning";
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, []);
+
+  function handleOpenCamera() {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+
+    setScanState("scanning");
+    timerRef.current = setTimeout(() => {
+      setScanState("validated");
+      timerRef.current = setTimeout(() => {
+        onVmScanSuccess();
+        setScanState("idle");
+        timerRef.current = null;
+      }, 450);
+    }, 3000);
+  }
+
   return (
     <Screen title={productCopy.scanAndPay} eyebrow="Fast checkout" scrollKey="scan-pay">
-      <View style={styles.scannerFrame}>
+      <View style={[styles.scannerFrame, isScanning && styles.scannerFrameActive, scanState === "validated" && styles.scannerFrameSuccess]}>
         <View style={styles.cornerTopLeft} />
         <View style={styles.cornerTopRight} />
-        <Ionicons name="scan-outline" size={86} color={colors.ink} />
-        <Text style={styles.scanText}>Scan the QR code on the VM</Text>
-        <Text style={styles.scanHint}>Pay at the VM or collect an {productCopy.orderAhead} purchase</Text>
+        {isScanning ? (
+          <ActivityIndicator size="large" color={colors.blue} />
+        ) : (
+          <Ionicons name={scanState === "validated" ? "checkmark-circle-outline" : "scan-outline"} size={86} color={scanState === "validated" ? colors.success : colors.ink} />
+        )}
+        <Text style={styles.scanText}>
+          {isScanning
+            ? "Camera Opened"
+            : scanState === "validated"
+              ? "VM Scan Confirmed"
+              : "Scan the QR code on the VM"}
+        </Text>
+        <Text style={styles.scanHint}>
+          {isScanning
+            ? "Waiting for the VM device to confirm the scan..."
+            : scanState === "validated"
+              ? "VM verified the session. Opening app payment."
+              : `Pay at the VM or collect an ${productCopy.orderAhead} purchase`}
+        </Text>
         <View style={styles.cornerBottomLeft} />
         <View style={styles.cornerBottomRight} />
       </View>
 
-      <TouchableOpacity style={styles.primaryButton}>
-        <Ionicons name="camera-outline" size={22} color="#FFFFFF" />
-        <Text style={styles.primaryButtonText}>Open Camera</Text>
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel={isScanning ? "Camera scanning in progress" : "Open camera"}
+        style={[styles.primaryButton, isScanning && styles.primaryButtonDisabled]}
+        disabled={isScanning}
+        onPress={handleOpenCamera}
+      >
+        <Ionicons name={isScanning ? "sync-outline" : "camera-outline"} size={22} color="#FFFFFF" />
+        <Text style={styles.primaryButtonText}>{isScanning ? "Scanning..." : "Open Camera"}</Text>
       </TouchableOpacity>
+
+      {scanState === "validated" ? (
+        <AppCard style={styles.successCard}>
+          <View style={styles.warningHeader}>
+            <Ionicons name="checkmark-circle-outline" size={20} color={colors.success} />
+            <Text style={styles.warningTitle}>VM Device Confirmed</Text>
+          </View>
+          <Text style={styles.successText}>The VM session has been validated. Continue payment in the app cashier.</Text>
+        </AppCard>
+      ) : null}
 
       <AppCard style={styles.warningCard}>
         <View style={styles.warningHeader}>
@@ -73,6 +140,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#EEE8DB",
     position: "relative",
     marginBottom: 16
+  },
+  scannerFrameActive: {
+    backgroundColor: "#EAF2F5"
+  },
+  scannerFrameSuccess: {
+    backgroundColor: "#E8F4EF"
   },
   cornerTopLeft: {
     position: "absolute",
@@ -136,6 +209,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8
   },
+  primaryButtonDisabled: {
+    opacity: 0.72
+  },
   primaryButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
@@ -150,6 +226,11 @@ const styles = StyleSheet.create({
     borderColor: "#F1D9A7",
     backgroundColor: "#FFF7E6"
   },
+  successCard: {
+    marginTop: 14,
+    borderColor: "#B9D9C9",
+    backgroundColor: "#F0FAF5"
+  },
   warningHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -162,6 +243,13 @@ const styles = StyleSheet.create({
   },
   warningText: {
     color: colors.coffee,
+    fontSize: 12,
+    fontWeight: "700",
+    lineHeight: 18,
+    marginTop: 7
+  },
+  successText: {
+    color: colors.success,
     fontSize: 12,
     fontWeight: "700",
     lineHeight: 18,

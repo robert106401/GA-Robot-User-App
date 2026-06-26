@@ -7,6 +7,7 @@ import {
   applyTopUp,
   applyXpAction,
   claimCoupon,
+  completeVmAppPayOrder,
   createInitialAppState,
   expireEligibleOrders,
   getOrderCollectionState,
@@ -326,6 +327,36 @@ test("wallet checkout spends eCard balance, awards points, and clears purchased 
   assert.equal(next.xpHistory[0].eventKey, "purchase:PAY-240309-000123");
   assert.equal(next.paymentHistory[0].status, "Paid");
   assert.deepEqual(next.cartItems, {});
+});
+
+test("VM app pay creates a paid VM order and cloud completion marks it completed", () => {
+  const paid = applyCheckout(createInitialAppState(), {
+    title: "Iced Americano · VM Session",
+    amount: 3.2,
+    itemCount: 1,
+    paymentMethod: "Wallet eCard",
+    paymentMethodId: "wallet",
+    points: 35,
+    items: [{ ...cartItem, quantity: 1, customizationSummary: "VM selected · Regular Ice" }],
+    vmOrder: {
+      orderNumber: "VMO-240309-000777",
+      machineId: "vm-library-01",
+      machineName: "Library Commons VM"
+    }
+  }, 1710000000777);
+  const order = paid.orders[0];
+
+  assert.equal(order.orderMode, "vm_app_pay");
+  assert.equal(order.status, "Paid");
+  assert.equal(order.orderNumber, "VMO-240309-000777");
+  assert.equal(order.machineName, "Library Commons VM");
+  assert.equal(order.pickupCode, undefined);
+  assert.equal(order.pickupExpiresAtEpoch, undefined);
+  assert.equal(paid.paymentHistory[0].description, "VM App Pay · VMO-240309-000777");
+
+  const completed = completeVmAppPayOrder(paid, order.id);
+  assert.equal(completed.orders[0].status, "Completed");
+  assert.equal(completeVmAppPayOrder(completed, order.id), completed);
 });
 
 test("insufficient wallet balance cannot mutate state", () => {

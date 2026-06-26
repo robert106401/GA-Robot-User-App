@@ -70,6 +70,7 @@ import {
   applyTopUp,
   applyXpAction,
   claimCoupon,
+  completeVmAppPayOrder,
   createPartnerVoucherCode,
   createInitialAppState,
   expireEligibleOrders,
@@ -260,6 +261,8 @@ type PendingCheckoutCashier = {
   request: CheckoutCashierRequest;
 };
 
+type VmCheckoutOrder = NonNullable<CheckoutResult["vmOrder"]>;
+
 type OrderDetailReturnTarget = "home" | "attention" | "orders";
 
 type InstantPointsBenefit = {
@@ -335,6 +338,8 @@ function renderScreen(
   setUserProfile: (profile: Profile) => void,
   checkoutItems: CartItem[] | null,
   setCheckoutItems: (items: CartItem[] | null) => void,
+  pendingVmCheckoutOrder: VmCheckoutOrder | null,
+  setPendingVmCheckoutOrder: (order: VmCheckoutOrder | null) => void,
   checkoutBenefitAsset: CouponAssetTarget | null,
   setCheckoutBenefitAsset: (asset: CouponAssetTarget | null) => void,
   checkoutPayment: PaymentMethodId,
@@ -401,11 +406,13 @@ function renderScreen(
   onChangeQaCashierFailure: (enabled: boolean) => void,
   pointsInstantRedeemEnabled: boolean,
   onChangePointsInstantRedeem: (enabled: boolean) => void,
-  onResetDemoState: () => void
+  onResetDemoState: () => void,
+  onOpenVmScanPayment: () => void
 ) {
   const openCheckout = (items: CartItem[]) => {
     setCheckoutPayment(defaultPaymentMethod);
     setCheckoutBenefitAsset(null);
+    setPendingVmCheckoutOrder(null);
     setCheckoutItems(items);
   };
   const openCouponAssets = (asset: CouponAssetTarget | null = null, filter: RewardFilter = "All") => {
@@ -421,6 +428,7 @@ function renderScreen(
     setActivePartnerOfferId(null);
     setCashierPartnerOffer(null);
     setCashierCheckout(null);
+    setPendingVmCheckoutOrder(null);
     setCashierRecentCard(null);
     setCashierCardId("");
     setCashierTopUp(null);
@@ -435,6 +443,7 @@ function renderScreen(
     setIsCouponListOpen(false);
     setActiveCouponAsset(null);
     setCouponInitialFilter("All");
+    setPendingVmCheckoutOrder(null);
     setIsBenefitListOpen(false);
     setIsTierOpen(false);
     setIsExpHistoryOpen(false);
@@ -451,6 +460,7 @@ function renderScreen(
     setActiveVMId(null);
     setActiveSkuId(null);
     setIsCartOpen(false);
+    setPendingVmCheckoutOrder(null);
     setActiveHomeOrderId(null);
     setActiveHomeOrderReturnTarget("home");
     setActivePaymentMode(null);
@@ -504,6 +514,7 @@ function renderScreen(
     return (
       <CheckoutScreen
         items={checkoutItems}
+        vmOrder={pendingVmCheckoutOrder ?? undefined}
         walletBalance={walletBalance}
         walletBalances={walletBalances}
         pointsBalance={pointsBalance}
@@ -522,6 +533,7 @@ function renderScreen(
         onShowToast={onShowToast}
         onBack={() => {
           setCheckoutBenefitAsset(null);
+          setPendingVmCheckoutOrder(null);
           setCheckoutItems(null);
         }}
       />
@@ -781,7 +793,7 @@ function renderScreen(
         />
       );
     case "scan":
-      return <ScanPayScreen />;
+      return <ScanPayScreen onVmScanSuccess={onOpenVmScanPayment} />;
     case "rewards":
       if (isTierOpen) {
         return (
@@ -1170,6 +1182,7 @@ export default function App() {
   const [activePaymentPoints, setActivePaymentPoints] = useState(0);
   const [userProfile, setUserProfile] = useState<Profile>(defaultProfile);
   const [checkoutItems, setCheckoutItems] = useState<CartItem[] | null>(null);
+  const [pendingVmCheckoutOrder, setPendingVmCheckoutOrder] = useState<VmCheckoutOrder | null>(null);
   const [checkoutBenefitAsset, setCheckoutBenefitAsset] = useState<CouponAssetTarget | null>(null);
   const [checkoutPayment, setCheckoutPayment] = useState<PaymentMethodId>("wallet");
   const [topUpPayment, setTopUpPayment] = useState<PaymentMethodId>("card");
@@ -1214,6 +1227,7 @@ export default function App() {
   const meScrollYRef = useRef(0);
   const expToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const appToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const vmCompletionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const expCountTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const expToastAnimation = useRef(new Animated.Value(0)).current;
 
@@ -1274,6 +1288,9 @@ export default function App() {
       }
       if (appToastTimerRef.current) {
         clearTimeout(appToastTimerRef.current);
+      }
+      if (vmCompletionTimerRef.current) {
+        clearTimeout(vmCompletionTimerRef.current);
       }
       if (expCountTimerRef.current) {
         clearInterval(expCountTimerRef.current);
@@ -1445,6 +1462,30 @@ export default function App() {
     setActiveHomeOrderId(`order-${createdAt}`);
   }
 
+  function handleVmScanPayment() {
+    const sku = skus.find((item) => item.id === "sku-1") ?? skus[0];
+    setCheckoutPayment(defaultPaymentMethod);
+    setCheckoutBenefitAsset(null);
+    setPendingVmCheckoutOrder({
+      orderNumber: "VMO-260625-000314",
+      machineId: "vm-library-commons",
+      machineName: "Library Commons VM"
+    });
+    setCheckoutItems([
+      {
+        skuId: sku.id,
+        quantity: 1,
+        customizationSummary: "VM selected · Regular Ice"
+      }
+    ]);
+    showAppToast({
+      tone: "success",
+      title: "VM scan confirmed",
+      message: "The VM order loaded. Review eligible benefits before paying.",
+      icon: "qr-code-outline"
+    }, 3600);
+  }
+
   function handleCashierCheckoutPayment(): CashierPaymentOutcome | null {
     if (!cashierCheckout) {
       return null;
@@ -1452,6 +1493,7 @@ export default function App() {
     const selectedMethod = getPaymentMethod(cashierPayment);
     const request = cashierCheckout.request;
     const isNoPaymentRequired = request.amount <= 0;
+    const isVmAppPay = Boolean(request.vmOrder);
     const createdAt = Date.now();
     updateAppStateWithExpToast((state) =>
       applyCheckout(
@@ -1466,10 +1508,10 @@ export default function App() {
       )
     );
     return {
-      title: isNoPaymentRequired ? "Order Confirmed" : "Payment Successful",
+      title: isNoPaymentRequired ? isVmAppPay ? "VM Order Paid" : "Order Confirmed" : "Payment Successful",
       message: isNoPaymentRequired
-        ? `${request.benefitsApplied?.[0]?.title ?? "Benefits"} applied · Prepaid order created`
-        : `${formatCurrency(request.amount)} paid · Prepaid order created`,
+        ? `${request.benefitsApplied?.[0]?.title ?? "Benefits"} applied · ${isVmAppPay ? "VM order paid" : "Prepaid order created"}`
+        : `${formatCurrency(request.amount)} paid · ${isVmAppPay ? "VM order paid" : "Prepaid order created"}`,
       meta: request.pointsRedeemed
         ? `-${request.pointsRedeemed.toLocaleString()} Points`
         : request.points > 0 || request.xpEarned > 0
@@ -1481,6 +1523,7 @@ export default function App() {
         setCashierRecentCard(null);
         setCashierCardId("");
         setCheckoutItems(null);
+        setPendingVmCheckoutOrder(null);
         setIsCartOpen(false);
         setActiveSkuId(null);
         setActiveTab("me");
@@ -1488,6 +1531,21 @@ export default function App() {
         setActivityTab("Orders");
         setActiveHomeOrderReturnTarget("orders");
         setActiveHomeOrderId(`order-${createdAt}`);
+        if (isVmAppPay) {
+          if (vmCompletionTimerRef.current) {
+            clearTimeout(vmCompletionTimerRef.current);
+          }
+          vmCompletionTimerRef.current = setTimeout(() => {
+            setAppState((state) => completeVmAppPayOrder(state, `order-${createdAt}`));
+            showAppToast({
+              tone: "success",
+              title: "VM dispense complete",
+              message: `${request.vmOrder?.machineName ?? "VM"} confirmed the drink was dispensed.`,
+              icon: "checkmark-circle-outline"
+            }, 4200);
+            vmCompletionTimerRef.current = null;
+          }, 3000);
+        }
       }
     };
   }
@@ -1835,9 +1893,9 @@ export default function App() {
     : cashierGift
     ? "Gift payment"
     : cashierCheckout
-    ? "Prepaid order"
+    ? cashierCheckout.request.vmOrder ? "VM order" : "Prepaid order"
     : "Add Funds";
-  const cashierEyebrow = cashierTopUp ? "Wallet cashier" : cashierGift ? "Gift cashier" : cashierCheckout ? "Order cashier" : "Secure cashier";
+  const cashierEyebrow = cashierTopUp ? "Wallet cashier" : cashierGift ? "Gift cashier" : cashierCheckout ? cashierCheckout.request.vmOrder ? "VM app pay" : "Order cashier" : "Secure cashier";
   const cashierSummaryTitle = cashierPartnerOffer
     ? cashierPartnerOffer.title
     : cashierTopUp
@@ -1854,7 +1912,9 @@ export default function App() {
     : cashierGift
     ? `To ${cashierGift.request.recipientName}`
     : cashierCheckout
-    ? `${cashierCheckout.request.itemCount} items prepaid`
+    ? cashierCheckout.request.vmOrder
+      ? `${cashierCheckout.request.itemCount} item${cashierCheckout.request.itemCount > 1 ? "s" : ""} from ${cashierCheckout.request.vmOrder.machineName}`
+      : `${cashierCheckout.request.itemCount} items prepaid`
     : "";
   const cashierMethods = cashierAvailablePaymentMethods.filter(
     (method) => method.modes.includes(cashierMode) && method.id !== "paypal"
@@ -1932,6 +1992,8 @@ export default function App() {
             setUserProfile,
             checkoutItems,
             setCheckoutItems,
+            pendingVmCheckoutOrder,
+            setPendingVmCheckoutOrder,
             checkoutBenefitAsset,
             setCheckoutBenefitAsset,
             checkoutPayment,
@@ -2010,7 +2072,8 @@ export default function App() {
             setQaCashierFailureEnabled,
             pointsInstantRedeemEnabled,
             setPointsInstantRedeemEnabled,
-            handleResetDemoState
+            handleResetDemoState,
+            handleVmScanPayment
           )}
         </View>
       </View>
@@ -2040,6 +2103,7 @@ export default function App() {
               setCashierTopUp(null);
               setCashierGift(null);
               setCashierCheckout(null);
+              setPendingVmCheckoutOrder(null);
               setCashierRecentCard(null);
               setCashierCardId("");
             }}

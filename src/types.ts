@@ -117,6 +117,11 @@ export type CheckoutResult = {
   benefitsApplied?: BenefitApplied[];
   pointsRedeemed?: number;
   items: CartItem[];
+  vmOrder?: {
+    orderNumber: string;
+    machineId: string;
+    machineName: string;
+  };
 };
 
 export type GiftKind = "voucher" | "ecard";

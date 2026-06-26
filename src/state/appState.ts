@@ -884,6 +884,8 @@ export function applyCheckout(
   const orderNumber = createBusinessId("ORD", createdAt);
   const transactionId = createBusinessId("PAY", createdAt);
   const displayDate = formatActivityDateTime(createdAt);
+  const isVmAppPay = Boolean(result.vmOrder);
+  const displayOrderNumber = result.vmOrder?.orderNumber ?? orderNumber;
   const xp = calculatePurchaseXp(result.amount);
   const xpRecord = xp > 0
     ? createXpRecord(
@@ -905,20 +907,22 @@ export function applyCheckout(
   });
   const newOrder: OrderRecord = {
     id: `order-${createdAt}`,
-    orderNumber,
+    orderNumber: displayOrderNumber,
     title: result.title,
     date: displayDate,
     amount: formatCurrency(result.amount),
-    orderMode: "app_preorder",
-    status: "Ready to collect",
+    orderMode: isVmAppPay ? "vm_app_pay" : "app_preorder",
+    status: isVmAppPay ? "Paid" : "Ready to collect",
     itemCount: result.itemCount,
     paymentMethod: result.paymentMethod,
     points: result.points,
     items: orderItems,
-    pickupCode: `${String(createdAt).slice(-6, -3)} ${String(createdAt).slice(-3)}`,
-    pickupExpiresAt: "Within 23 hr 59 min",
-    pickupExpiresAtEpoch: createdAt + PREPAID_COLLECTION_WINDOW_MS,
-    redemptionToken: `redeem-${orderNumber.toLowerCase()}-${String(createdAt)}`
+    machineId: result.vmOrder?.machineId,
+    machineName: result.vmOrder?.machineName,
+    pickupCode: isVmAppPay ? undefined : `${String(createdAt).slice(-6, -3)} ${String(createdAt).slice(-3)}`,
+    pickupExpiresAt: isVmAppPay ? undefined : "Within 23 hr 59 min",
+    pickupExpiresAtEpoch: isVmAppPay ? undefined : createdAt + PREPAID_COLLECTION_WINDOW_MS,
+    redemptionToken: isVmAppPay ? undefined : `redeem-${orderNumber.toLowerCase()}-${String(createdAt)}`
   };
 
   let cashBalance = state.cashBalance;
@@ -991,7 +995,7 @@ export function applyCheckout(
         id: `points-redemption-${createdAt}`,
         transactionId: createBusinessId("RDM", createdAt),
         title: result.benefitsApplied?.find((benefit) => benefit.type === "Points")?.title ?? "Points redemption",
-        description: `${orderNumber} · Applied at checkout`,
+        description: `${displayOrderNumber} · Applied at checkout`,
         date: displayDate,
         amount: 0,
         method: "Wallet eCard" as const,
@@ -1003,7 +1007,7 @@ export function applyCheckout(
         id: `payment-${createdAt}`,
         transactionId,
         title: result.title,
-        description: `Prepaid Order · ${orderNumber}`,
+        description: `${isVmAppPay ? "VM App Pay" : "Prepaid Order"} · ${displayOrderNumber}`,
         date: displayDate,
         amount: -result.amount,
         method: getCheckoutHistoryMethod(result.paymentMethodId),
@@ -1422,6 +1426,25 @@ export function expireEligibleOrders(
         : order
     ),
     walletHistory: [...walletEntries.reverse(), ...state.walletHistory]
+  };
+}
+
+export function completeVmAppPayOrder(
+  state: PersistedAppState,
+  orderId: string
+): PersistedAppState {
+  const target = state.orders.find((order) => order.id === orderId);
+  if (!target || target.orderMode !== "vm_app_pay" || target.status !== "Paid") {
+    return state;
+  }
+
+  return {
+    ...state,
+    orders: state.orders.map((order) =>
+      order.id === orderId
+        ? { ...order, status: "Completed" }
+        : order
+    )
   };
 }
 

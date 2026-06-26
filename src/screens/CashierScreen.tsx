@@ -72,11 +72,15 @@ export function CashierScreen({
     ? "Confirm Gift"
     : title.startsWith("Partner")
       ? "Confirm Purchase"
+      : title === "VM order"
+        ? "Confirm Payment"
       : "Confirm Order";
   const noPaymentNoticeText = title === "Gift payment"
     ? "Your benefits cover the full amount. Confirm to send the gift."
     : title.startsWith("Partner")
       ? "Your benefits cover the full amount. Confirm to add this partner benefit."
+      : title === "VM order"
+        ? "Your benefits cover the full amount. Confirm to pay this VM order."
       : "Your benefits cover the full amount. Confirm to create the prepaid order.";
   const walletCoversAmount = walletBalance >= amount;
   const canPay = isNoPaymentRequired || !isWallet || walletCoversAmount;

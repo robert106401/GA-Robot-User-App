@@ -19,6 +19,7 @@ import type { CouponAssetTarget } from "./CouponListScreen";
 
 type CheckoutScreenProps = {
   items: CartItem[];
+  vmOrder?: CheckoutResult["vmOrder"];
   walletBalance: number;
   walletBalances: WalletBalances;
   pointsBalance: number;
@@ -52,6 +53,7 @@ type BenefitCandidate = {
 
 export function CheckoutScreen({
   items,
+  vmOrder,
   walletBalance,
   walletBalances,
   pointsBalance,
@@ -113,6 +115,7 @@ export function CheckoutScreen({
   const cashUsed = Math.max(0, payable - rewardsBonusUsed);
   const stockIssues = checkoutItems.filter(({ item, sku }) => item.quantity > sku.stock || sku.stock === 0);
   const hasStockIssue = stockIssues.length > 0;
+  const isVmCheckout = Boolean(vmOrder);
 
   function handleContinueToPay() {
     if (hasStockIssue) {
@@ -134,27 +137,39 @@ export function CheckoutScreen({
       benefitsApplied,
       pointsRedeemed,
       items,
-      xpEarned
+      xpEarned,
+      vmOrder
     });
   }
 
   return (
     <Screen
-      title="Checkout"
-      eyebrow={`${totalQuantity} item${totalQuantity > 1 ? "s" : ""} selected`}
+      title={isVmCheckout ? "VM Order Checkout" : "Checkout"}
+      eyebrow={vmOrder?.machineName ?? `${totalQuantity} item${totalQuantity > 1 ? "s" : ""} selected`}
       onBack={onBack}
-      scrollKey="checkout"
+      scrollKey={isVmCheckout ? `vm-checkout-${vmOrder?.orderNumber}` : "checkout"}
       bottomAction={
         <View style={styles.checkoutBottomStack}>
           <View style={styles.checkoutBottomNoticeWrap}>
-            <InlineNotice
-              icon="time-outline"
-              title="Prepaid Order Expiry"
-              meta="24-hour pickup"
-              text={PREPAID_EXPIRY_NOTICE}
-              tone="warning"
-              style={styles.bottomPrepaidPolicyNotice}
-            />
+            {isVmCheckout ? (
+              <InlineNotice
+                icon="qr-code-outline"
+                title="VM Order Benefits"
+                meta={vmOrder?.orderNumber}
+                text="All eligible app benefits can be applied before paying this VM order."
+                tone="info"
+                style={styles.bottomPrepaidPolicyNotice}
+              />
+            ) : (
+              <InlineNotice
+                icon="time-outline"
+                title="Prepaid Order Expiry"
+                meta="24-hour pickup"
+                text={PREPAID_EXPIRY_NOTICE}
+                tone="warning"
+                style={styles.bottomPrepaidPolicyNotice}
+              />
+            )}
           </View>
           <BottomActionBar>
             <BottomActionSummary
