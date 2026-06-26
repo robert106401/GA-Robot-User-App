@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "G&A Robot",
+    "slug": "vending-machine-app",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ga.vendingmachine"
+    },
+    "android": {
+      "package": "com.ga.vendingmachine",
+      "softwareKeyboardLayoutMode": "pan",
+      "adaptiveIcon": {
+        "backgroundColor": "#F7F3EA"
+      }
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "name": "vending-machine-app",
+  "version": "0.1.0",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "version:generate": "node scripts/generate-app-version.js",
+    "start": "npm run version:generate && expo start",
+    "android": "npm run version:generate && expo start --android",
+    "ios": "npm run version:generate && expo start --ios",
+    "web": "npm run version:generate && expo start --web",
+    "tunnel:start": "./scripts/expo-tunnel.sh start",
+    "tunnel:stop": "./scripts/expo-tunnel.sh stop",
+    "tunnel:status": "./scripts/expo-tunnel.sh status",
+    "typecheck": "npm run version:generate && tsc --noEmit",
+    "test": "node --test --experimental-strip-types tests/*.test.mjs"
+  },
+  "dependencies": {
+    "@expo/vector-icons": "^15.1.1",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "expo": "~54.0.35",
+    "expo-status-bar": "~3.0.9",
+    "react": "^19.1.0",
+    "react-dom": "19.1.0",
+    "react-native": "^0.81.5",
+    "react-native-web": "^0.21.2"
+  },
+  "devDependencies": {
+    "@types/react": "~19.1.10",
+    "typescript": "~5.9.2"
+  }
+}
