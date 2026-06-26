@@ -20,6 +20,7 @@ import type { CouponAssetTarget } from "./CouponListScreen";
 type CheckoutScreenProps = {
   items: CartItem[];
   vmOrder?: CheckoutResult["vmOrder"];
+  backLabel?: string;
   walletBalance: number;
   walletBalances: WalletBalances;
   pointsBalance: number;
@@ -54,6 +55,7 @@ type BenefitCandidate = {
 export function CheckoutScreen({
   items,
   vmOrder,
+  backLabel = "Back",
   walletBalance,
   walletBalances,
   pointsBalance,
@@ -147,6 +149,7 @@ export function CheckoutScreen({
       title={isVmCheckout ? "VM Order Checkout" : "Checkout"}
       eyebrow={vmOrder?.machineName ?? `${totalQuantity} item${totalQuantity > 1 ? "s" : ""} selected`}
       onBack={onBack}
+      backLabel={backLabel}
       scrollKey={isVmCheckout ? `vm-checkout-${vmOrder?.orderNumber}` : "checkout"}
       bottomAction={
         <View style={styles.checkoutBottomStack}>

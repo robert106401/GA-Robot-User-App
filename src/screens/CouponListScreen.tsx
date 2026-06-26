@@ -18,6 +18,7 @@ type CouponListScreenProps = {
   usedBenefitRecords: UsedBenefitRecord[];
   initialAsset?: CouponAssetTarget | null;
   initialFilter?: RewardFilter;
+  backLabel?: string;
   onBack: () => void;
 };
 
@@ -51,6 +52,7 @@ export function CouponListScreen({
   usedBenefitRecords,
   initialAsset = null,
   initialFilter = "All",
+  backLabel = "Back",
   onBack
 }: CouponListScreenProps) {
   const [activeAsset, setActiveAsset] = useState<CouponAssetTarget | null>(initialAsset);
@@ -108,6 +110,7 @@ export function CouponListScreen({
     }
     setActiveAsset(null);
   };
+  const detailBackLabel = initialAsset ? backLabel : "Back to My Rewards";
 
   if (activeAsset) {
     if (activeAsset.type === "voucher") {
@@ -119,6 +122,7 @@ export function CouponListScreen({
             used={usedBenefitIds.includes(createBenefitUsageKey("Voucher", voucher.id))}
             usedAt={getUsedBenefitAt(usedBenefitRecords, createBenefitUsageKey("Voucher", voucher.id))}
             onBack={handleAssetBack}
+            backLabel={detailBackLabel}
           />
         );
       }
@@ -130,6 +134,7 @@ export function CouponListScreen({
             purchase={partnerVoucher.purchase}
             offer={partnerVoucher.offer}
             onBack={handleAssetBack}
+            backLabel={detailBackLabel}
           />
         );
       }
@@ -140,6 +145,7 @@ export function CouponListScreen({
           <PointRewardDetailScreen
             reward={pointReward}
             onBack={handleAssetBack}
+            backLabel={detailBackLabel}
           />
         );
       }
@@ -152,6 +158,7 @@ export function CouponListScreen({
             used={usedBenefitIds.includes(createBenefitUsageKey("Coupon", coupon.id))}
             usedAt={getUsedBenefitAt(usedBenefitRecords, createBenefitUsageKey("Coupon", coupon.id))}
             onBack={handleAssetBack}
+            backLabel={detailBackLabel}
           />
       );
       }
@@ -159,7 +166,7 @@ export function CouponListScreen({
   }
 
   return (
-    <Screen title="My Rewards" eyebrow="Redeemable assets" scrollKey="coupons" onBack={onBack}>
+    <Screen title="My Rewards" eyebrow="Redeemable assets" scrollKey="coupons" onBack={onBack} backLabel={backLabel}>
       <Text style={styles.rewardsHelper}>Vouchers redeem items. Coupons reduce your price.</Text>
 
       <View style={styles.rewardTabBar}>
@@ -312,7 +319,7 @@ export function CouponListScreen({
   );
 }
 
-function VoucherDetailScreen({ voucher, used, usedAt, onBack }: { voucher: (typeof vouchers)[number]; used: boolean; usedAt?: string; onBack: () => void }) {
+function VoucherDetailScreen({ voucher, used, usedAt, onBack, backLabel }: { voucher: (typeof vouchers)[number]; used: boolean; usedAt?: string; onBack: () => void; backLabel: string }) {
   const status = used ? "Used" : voucher.status;
   const expiresLabel = formatRewardDate(voucher.expiresAt);
   const resolvedUsedAt = usedAt ?? voucher.usedAt;
@@ -322,6 +329,7 @@ function VoucherDetailScreen({ voucher, used, usedAt, onBack }: { voucher: (type
       eyebrow={voucher.title}
       scrollKey={`asset-detail-${voucher.id}`}
       onBack={onBack}
+      backLabel={backLabel}
     >
       <RewardDetailHero
         icon="gift-outline"
@@ -355,11 +363,13 @@ function VoucherDetailScreen({ voucher, used, usedAt, onBack }: { voucher: (type
 function PartnerVoucherDetailScreen({
   purchase,
   offer,
-  onBack
+  onBack,
+  backLabel
 }: {
   purchase: PartnerOfferPurchaseRecord;
   offer: (typeof partnerOffers)[number];
   onBack: () => void;
+  backLabel: string;
 }) {
   const status: AssetStatus = "Active";
   return (
@@ -368,6 +378,7 @@ function PartnerVoucherDetailScreen({
       eyebrow={offer.partnerName}
       scrollKey={`partner-voucher-detail-${purchase.code}`}
       onBack={onBack}
+      backLabel={backLabel}
     >
       <RewardDetailHero
         icon={offer.purchaseCategory === "ticket" ? "ticket-outline" : "restaurant-outline"}
@@ -403,7 +414,7 @@ function PartnerVoucherDetailScreen({
   );
 }
 
-function CouponDetailScreen({ coupon, used, usedAt, onBack }: { coupon: (typeof coupons)[number]; used: boolean; usedAt?: string; onBack: () => void }) {
+function CouponDetailScreen({ coupon, used, usedAt, onBack, backLabel }: { coupon: (typeof coupons)[number]; used: boolean; usedAt?: string; onBack: () => void; backLabel: string }) {
   const status = used ? "Used" : coupon.status === "Expired" || coupon.status === "Used" ? coupon.status : "Claimed";
   const expiresLabel = formatRewardDisplayDate(coupon.expires);
   const partnerOffer = partnerOffers.find((offer) => offer.assetCouponId === coupon.id);
@@ -414,6 +425,7 @@ function CouponDetailScreen({ coupon, used, usedAt, onBack }: { coupon: (typeof 
       eyebrow={coupon.merchant}
       scrollKey={`asset-detail-${coupon.id}`}
       onBack={onBack}
+      backLabel={backLabel}
     >
       <RewardDetailHero
         icon="ticket-outline"
@@ -445,7 +457,7 @@ function CouponDetailScreen({ coupon, used, usedAt, onBack }: { coupon: (typeof 
   );
 }
 
-function PointRewardDetailScreen({ reward, onBack }: { reward: RedeemedPointReward; onBack: () => void }) {
+function PointRewardDetailScreen({ reward, onBack, backLabel }: { reward: RedeemedPointReward; onBack: () => void; backLabel: string }) {
   const expiresLabel = formatRewardDate(reward.expiresAt);
   return (
     <Screen
@@ -453,6 +465,7 @@ function PointRewardDetailScreen({ reward, onBack }: { reward: RedeemedPointRewa
       eyebrow="Points Shop"
       scrollKey={`point-reward-detail-${reward.id}`}
       onBack={onBack}
+      backLabel={backLabel}
     >
       <RewardDetailHero
         icon={reward.rewardType === "Coupon" ? "ticket-outline" : "gift-outline"}

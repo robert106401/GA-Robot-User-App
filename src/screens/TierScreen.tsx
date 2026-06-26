@@ -14,6 +14,7 @@ import { XP_RULES } from "../xp";
 
 type TierScreenProps = {
   onBack: () => void;
+  backLabel?: string;
   onOpenExpHistory: () => void;
   xpBalance: number;
   xpHistory: XpRecord[];
@@ -21,6 +22,7 @@ type TierScreenProps = {
 
 export function TierScreen({
   onBack,
+  backLabel = "Back to Account",
   onOpenExpHistory,
   xpBalance,
   xpHistory
@@ -36,7 +38,7 @@ export function TierScreen({
       eyebrow="Tier progress"
       scrollKey="member-growth"
       onBack={onBack}
-      backLabel="Back to Me"
+      backLabel={backLabel}
     >
       <AppCard
         style={[

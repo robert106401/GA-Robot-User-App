@@ -82,6 +82,8 @@ const pointsRewardOptions: PointsRewardOption[] = [
 type MeScreenProps = {
   profile: Profile;
   initialPage?: MePage | null;
+  onBack?: () => void;
+  backLabel?: string;
   onSaveProfile: (profile: Profile) => void;
   onOpenVouchers: () => void;
   onOpenCoupons: () => void;
@@ -140,6 +142,8 @@ type MePage =
 export function MeScreen({
   profile,
   initialPage = null,
+  onBack,
+  backLabel = "Back to Home",
   onSaveProfile,
   onOpenVouchers,
   onOpenCoupons,
@@ -183,6 +187,7 @@ export function MeScreen({
   onResetDemoState
 }: MeScreenProps) {
   const [activePage, setActivePage] = useState<MePage | null>(initialPage);
+  const [accountReturnPage, setAccountReturnPage] = useState<MePage | null>(null);
   const [notificationPreferences, setNotificationPreferences] = useState({
     inboxMessages: true,
     tipping: false,
@@ -192,7 +197,22 @@ export function MeScreen({
 
   useEffect(() => {
     setActivePage(initialPage);
+    setAccountReturnPage(null);
   }, [initialPage]);
+
+  const openAccountPage = (page: MePage, returnPage: MePage | null = null) => {
+    setAccountReturnPage(returnPage);
+    setActivePage(page);
+  };
+
+  const closeAccountPage = () => {
+    if (accountReturnPage) {
+      setActivePage(accountReturnPage);
+      setAccountReturnPage(null);
+      return;
+    }
+    setActivePage(null);
+  };
 
   if (activePage === "points") {
     return (
@@ -220,7 +240,8 @@ export function MeScreen({
         onSetCurrentCardId={onSetCurrentCardId}
         systemPaymentMethodIds={systemPaymentMethodIds}
         onShowToast={onShowToast}
-        onBack={() => setActivePage(null)}
+        onBack={closeAccountPage}
+        backLabel={accountReturnPage === "wallet-payments" ? "Back to Wallet eCard" : "Back to Account"}
       />
     );
   }
@@ -272,7 +293,8 @@ export function MeScreen({
       <AutoReloadSettingsScreen
         settings={autoReloadSettings}
         onChangeSettings={onChangeAutoReloadSettings}
-        onBack={() => setActivePage(null)}
+        onBack={closeAccountPage}
+        backLabel={accountReturnPage === "wallet-payments" ? "Back to Wallet eCard" : "Back to Account"}
       />
     );
   }
@@ -315,8 +337,8 @@ export function MeScreen({
         savedCards={savedCards}
         currentCardId={currentCardId}
         onOpenTopUp={onOpenTopUp}
-        onOpenAutoReload={() => setActivePage("auto-reload")}
-        onOpenPaymentMethods={() => setActivePage("payment-methods")}
+        onOpenAutoReload={() => openAccountPage("auto-reload", "wallet-payments")}
+        onOpenPaymentMethods={() => openAccountPage("payment-methods", "wallet-payments")}
         onBack={() => setActivePage(null)}
       />
     );
@@ -329,6 +351,8 @@ export function MeScreen({
       scrollKey="account-home"
       initialScrollY={initialScrollY}
       onScrollYChange={onScrollYChange}
+      onBack={onBack}
+      backLabel={backLabel}
     >
       <UnusedAssetsCard
         cardholderName={profile.name}
@@ -357,7 +381,7 @@ export function MeScreen({
         icon="wallet-outline"
         label="Wallet eCard & Payments"
         value="Balance and methods"
-        onPress={() => setActivePage("wallet-payments")}
+        onPress={() => openAccountPage("wallet-payments")}
       />
       <MenuItem
         icon="receipt-outline"
@@ -616,58 +640,76 @@ function ProductDisplayScreen({
 function AutoReloadSettingsScreen({
   settings,
   onChangeSettings,
-  onBack
+  onBack,
+  backLabel = "Back to Account"
 }: {
   settings: AutoReloadSettings;
   onChangeSettings: (settings: AutoReloadSettings) => void;
   onBack: () => void;
+  backLabel?: string;
 }) {
   const [showAllHistory, setShowAllHistory] = useState(false);
   const visibleHistory = showAllHistory ? autoReloadHistoryRecords : autoReloadHistoryRecords.slice(0, 3);
 
   return (
-    <Screen title="Auto Reload" eyebrow="Wallet eCard" scrollKey="auto-reload-settings" onBack={onBack} backLabel="Back to Account">
-      <Text style={styles.pageIntro}>
-        Keep your Cash Balance ready by adding funds automatically when it falls below your limit.
-      </Text>
-      <SettingToggle
-        icon="refresh-outline"
-        label="Auto Reload"
-        detail={settings.enabled ? formatAutoReloadStatus(settings) : "Turn on to add funds automatically."}
-        value={settings.enabled}
-        onValueChange={(enabled) => onChangeSettings({ ...settings, enabled })}
-      />
+    <Screen title="Auto Reload" eyebrow="Wallet eCard" scrollKey="auto-reload-settings" onBack={onBack} backLabel={backLabel}>
+      <AppCard style={styles.autoReloadCard}>
+        <View style={styles.autoReloadHeader}>
+          <View style={styles.autoReloadIcon}>
+            <Ionicons name="refresh-outline" size={18} color={colors.success} />
+          </View>
+          <View style={styles.autoReloadCopy}>
+            <Text style={styles.autoReloadTitle}>Auto Reload</Text>
+            <Text style={styles.autoReloadText}>
+              {settings.enabled
+                ? "Funds will be added automatically when Cash Balance falls below your limit."
+                : "Turn on to add funds automatically when Cash Balance falls below your limit."}
+            </Text>
+          </View>
+          <TouchableOpacity
+            accessibilityRole="switch"
+            accessibilityState={{ checked: settings.enabled }}
+            activeOpacity={0.84}
+            style={[styles.autoReloadSwitch, settings.enabled && styles.autoReloadSwitchOn]}
+            onPress={() => onChangeSettings({ ...settings, enabled: !settings.enabled })}
+          >
+            <View style={[styles.autoReloadSwitchKnob, settings.enabled && styles.autoReloadSwitchKnobOn]} />
+          </TouchableOpacity>
+        </View>
 
-      <AppCard style={styles.autoReloadSettingsCard}>
-        <View style={styles.autoReloadSettingGroup}>
-          <Text style={styles.autoReloadSettingLabel}>When Cash Balance is below</Text>
-          <View style={styles.autoReloadChipRow}>
-            {autoReloadThresholds.map((amount) => (
-              <AutoReloadChip
-                key={amount}
-                label={formatWholePaymentAmount(amount)}
-                selected={settings.threshold === amount}
-                onPress={() => onChangeSettings({ ...settings, threshold: amount })}
-              />
-            ))}
+        {settings.enabled ? (
+          <View style={styles.autoReloadSettings}>
+            <View style={styles.autoReloadSettingGroup}>
+              <Text style={styles.autoReloadSettingLabel}>When Cash Balance is below</Text>
+              <View style={styles.autoReloadChipRow}>
+                {autoReloadThresholds.map((amount) => (
+                  <AutoReloadChip
+                    key={amount}
+                    label={formatWholePaymentAmount(amount)}
+                    selected={settings.threshold === amount}
+                    onPress={() => onChangeSettings({ ...settings, threshold: amount })}
+                  />
+                ))}
+              </View>
+            </View>
+            <View style={styles.autoReloadSettingGroup}>
+              <Text style={styles.autoReloadSettingLabel}>Automatically add</Text>
+              <View style={styles.autoReloadChipRow}>
+                {autoReloadAmounts.map((amount) => (
+                  <AutoReloadChip
+                    key={amount}
+                    label={formatWholePaymentAmount(amount)}
+                    selected={settings.amount === amount}
+                    onPress={() => onChangeSettings({ ...settings, amount })}
+                  />
+                ))}
+              </View>
+            </View>
+            <Text style={styles.autoReloadFootnote}>
+              Uses your selected default payment method. You can change or turn this off anytime.
+            </Text>
           </View>
-        </View>
-        <View style={styles.autoReloadSettingGroup}>
-          <Text style={styles.autoReloadSettingLabel}>Automatically add</Text>
-          <View style={styles.autoReloadChipRow}>
-            {autoReloadAmounts.map((amount) => (
-              <AutoReloadChip
-                key={amount}
-                label={formatWholePaymentAmount(amount)}
-                selected={settings.amount === amount}
-                onPress={() => onChangeSettings({ ...settings, amount })}
-              />
-            ))}
-          </View>
-        </View>
-        <Text style={styles.autoReloadFootnote}>
-          Auto Reload uses your default payment method. Cash and Bonus balances cannot be withdrawn as cash.
-        </Text>
+        ) : null}
       </AppCard>
 
       <SectionHeader
@@ -1351,7 +1393,8 @@ function SavedPaymentMethodsScreen({
   onSetCurrentCardId,
   systemPaymentMethodIds,
   onShowToast,
-  onBack
+  onBack,
+  backLabel = "Back to Account"
 }: {
   walletBalance: number;
   walletBalances: WalletBalances;
@@ -1366,6 +1409,7 @@ function SavedPaymentMethodsScreen({
   systemPaymentMethodIds: PaymentMethodId[];
   onShowToast: (toast: AppToastMessage, duration?: number) => void;
   onBack: () => void;
+  backLabel?: string;
 }) {
   const [isAddingPaymentMethod, setIsAddingPaymentMethod] = useState(false);
   const [openSwipeItemId, setOpenSwipeItemId] = useState<string | null>(null);
@@ -1477,6 +1521,7 @@ function SavedPaymentMethodsScreen({
         walletBalance={walletBalance}
         availableMethods={availablePaymentMethods}
         initialPage="add-method"
+        backLabel="Back to Payment Methods"
         onBack={() => setIsAddingPaymentMethod(false)}
         onAddPaymentMethod={addPaymentMethodFromSharedFlow}
         onSelect={() => setIsAddingPaymentMethod(false)}
@@ -1485,7 +1530,7 @@ function SavedPaymentMethodsScreen({
   }
 
   return (
-    <Screen title="Payment Methods" eyebrow="Wallet & payments" scrollKey="saved-payment-methods" onBack={onBack} backLabel="Back to Account">
+    <Screen title="Payment Methods" eyebrow="Wallet & payments" scrollKey="saved-payment-methods" onBack={onBack} backLabel={backLabel}>
       <Text style={styles.pageIntro}>Choose how you pay for orders and add funds to your Wallet eCard.</Text>
       <View style={styles.walletBenefitCard}>
         <View style={styles.walletBenefitIcon}>
@@ -2310,9 +2355,67 @@ const styles = StyleSheet.create({
     height: 3,
     borderRadius: 2
   },
-  autoReloadSettingsCard: {
-    marginTop: 12,
-    gap: spacing.md
+  autoReloadCard: {
+    marginTop: spacing.sm,
+    gap: spacing.sm,
+    paddingVertical: 10
+  },
+  autoReloadHeader: {
+    minHeight: 48,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  autoReloadIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: statusColors.success.subtleBackground
+  },
+  autoReloadCopy: {
+    flex: 1,
+    minWidth: 0
+  },
+  autoReloadTitle: {
+    color: colors.ink,
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: "800"
+  },
+  autoReloadText: {
+    color: colors.muted,
+    fontSize: 11,
+    lineHeight: 15,
+    fontWeight: "600",
+    marginTop: 3
+  },
+  autoReloadSwitch: {
+    width: 40,
+    height: 24,
+    padding: 2,
+    borderRadius: 999,
+    justifyContent: "center",
+    backgroundColor: statusColors.neutral.background
+  },
+  autoReloadSwitchOn: {
+    backgroundColor: colors.success
+  },
+  autoReloadSwitchKnob: {
+    width: 20,
+    height: 20,
+    borderRadius: 999,
+    backgroundColor: colors.surface
+  },
+  autoReloadSwitchKnobOn: {
+    alignSelf: "flex-end"
+  },
+  autoReloadSettings: {
+    gap: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopColor: colors.line,
+    borderTopWidth: StyleSheet.hairlineWidth
   },
   autoReloadSettingGroup: {
     gap: spacing.sm

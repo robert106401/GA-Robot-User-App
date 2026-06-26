@@ -240,7 +240,7 @@ function GiftDetailScreen({
       eyebrow={gift.direction === "Sent" ? "Sent gift" : "Received gift"}
       scrollKey={`gift-detail-${gift.id}`}
       onBack={onBack}
-      backLabel="Gift History"
+      backLabel="Back to Gift History"
     >
       <View style={[styles.giftDetailHero, { backgroundColor: palette.background, borderColor: palette.accent }]}>
         <View style={[styles.giftDetailGlow, { backgroundColor: palette.soft }]} />
@@ -713,7 +713,7 @@ function PaymentDetailScreen({ payment, onBack }: { payment: PaymentHistoryRecor
       eyebrow={payment.type}
       scrollKey={`payment-detail-${payment.id}`}
       onBack={onBack}
-      backLabel="Transactions"
+      backLabel="Back to Transactions"
     >
       <TransactionDetailHero
         palette={palette}
@@ -748,7 +748,7 @@ function WalletDetailScreen({ record, onBack }: { record: WalletDisplayRecord; o
       eyebrow={displayAccount}
       scrollKey={`wallet-detail-${record.id}`}
       onBack={onBack}
-      backLabel="Transactions"
+      backLabel="Back to Transactions"
     >
       <TransactionDetailHero
         palette={palette}

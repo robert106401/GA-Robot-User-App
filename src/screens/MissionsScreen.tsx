@@ -30,6 +30,7 @@ type Mission = {
 
 type MissionsScreenProps = {
   onBack: () => void;
+  backLabel?: string;
   checkInStreak: number;
   checkedInToday: boolean;
   addFundsTotal: number;
@@ -46,6 +47,7 @@ type MissionsScreenProps = {
 
 export function MissionsScreen({
   onBack,
+  backLabel = "Back",
   checkInStreak,
   checkedInToday,
   addFundsTotal,
@@ -82,7 +84,7 @@ export function MissionsScreen({
       eyebrow="Earn EXP"
       scrollKey="missions"
       onBack={onBack}
-      backLabel="Back"
+      backLabel={backLabel}
     >
       <AppCard
         style={[

@@ -1,5 +1,4 @@
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { AppCard } from "../components/AppCard";
 import { BottomActionBar, BottomActionButton, BottomActionSummary } from "../components/BottomActionBar";
@@ -11,16 +10,11 @@ import { colors, radii, spacing, statusColors, typography } from "../theme";
 import { TopUpResult, WalletBalances } from "../types";
 import { getTierByExp } from "../tiers";
 import { getTierVisual } from "../tierVisuals";
-import { AutoReloadSettings, autoReloadAmounts, autoReloadThresholds } from "../autoReload";
-import { BonusSummary } from "../bonusSummary";
 
 type TopUpScreenProps = {
   walletBalance: number;
   walletBalances: WalletBalances;
-  bonusSummary: BonusSummary;
   xpBalance: number;
-  autoReloadSettings: AutoReloadSettings;
-  onChangeAutoReloadSettings: (settings: AutoReloadSettings) => void;
   onBack: () => void;
   backLabel?: string;
   onOpenCashier: (result: Omit<TopUpResult, "paymentMethodId">) => void;
@@ -31,10 +25,7 @@ let persistedTopUpAmount = 30;
 export function TopUpScreen({
   walletBalance,
   walletBalances,
-  bonusSummary,
   xpBalance,
-  autoReloadSettings,
-  onChangeAutoReloadSettings,
   onBack,
   backLabel = "Back",
   onOpenCashier
@@ -85,80 +76,6 @@ export function TopUpScreen({
         </View>
       </AppCard>
 
-      <AppCard style={styles.autoReloadCard}>
-        <View style={styles.autoReloadHeader}>
-          <View style={styles.autoReloadIcon}>
-            <Ionicons name="refresh-outline" size={18} color={colors.success} />
-          </View>
-          <View style={styles.autoReloadCopy}>
-            <Text style={styles.autoReloadTitle}>Auto Reload</Text>
-            <Text style={styles.autoReloadText}>
-              {autoReloadSettings.enabled
-                ? "Funds will be added automatically when Cash Balance falls below your limit."
-                : "Turn on to add funds automatically when Cash Balance falls below your limit."}
-            </Text>
-          </View>
-          <TouchableOpacity
-            accessibilityRole="switch"
-            accessibilityState={{ checked: autoReloadSettings.enabled }}
-            activeOpacity={0.84}
-            style={[styles.autoReloadSwitch, autoReloadSettings.enabled && styles.autoReloadSwitchOn]}
-            onPress={() => {
-              onChangeAutoReloadSettings({
-                ...autoReloadSettings,
-                enabled: !autoReloadSettings.enabled
-              });
-            }}
-          >
-            <View style={[styles.autoReloadSwitchKnob, autoReloadSettings.enabled && styles.autoReloadSwitchKnobOn]} />
-          </TouchableOpacity>
-        </View>
-
-        {autoReloadSettings.enabled ? (
-          <View style={styles.autoReloadSettings}>
-            <View style={styles.autoReloadSettingGroup}>
-              <Text style={styles.autoReloadSettingLabel}>When Cash Balance is below</Text>
-              <View style={styles.autoReloadChipRow}>
-                {autoReloadThresholds.map((amount) => (
-                  <AutoReloadChip
-                    key={amount}
-                    label={formatWholeCurrency(amount)}
-                    selected={autoReloadSettings.threshold === amount}
-                    onPress={() => {
-                      onChangeAutoReloadSettings({
-                        ...autoReloadSettings,
-                        threshold: amount
-                      });
-                    }}
-                  />
-                ))}
-              </View>
-            </View>
-            <View style={styles.autoReloadSettingGroup}>
-              <Text style={styles.autoReloadSettingLabel}>Automatically add</Text>
-              <View style={styles.autoReloadChipRow}>
-                {autoReloadAmounts.map((amount) => (
-                  <AutoReloadChip
-                    key={amount}
-                    label={formatWholeCurrency(amount)}
-                    selected={autoReloadSettings.amount === amount}
-                    onPress={() => {
-                      onChangeAutoReloadSettings({
-                        ...autoReloadSettings,
-                        amount
-                      });
-                    }}
-                  />
-                ))}
-              </View>
-            </View>
-            <Text style={styles.autoReloadFootnote}>
-              Uses your selected default payment method. You can change or turn this off anytime.
-            </Text>
-          </View>
-        ) : null}
-      </AppCard>
-
       <Text style={styles.sectionTitle}>Choose Amount</Text>
       <View style={styles.amountGrid}>
         {addFundsOffers.map((offer) => {
@@ -190,14 +107,18 @@ export function TopUpScreen({
       <InlineNotice
         icon="gift-outline"
         title="Bonus Balance"
-        meta={`${selectedOffer.rewardRate} bonus`}
-        text={`Bonus earned ${formatCurrency(bonusSummary.earned)}: ${formatCurrency(bonusSummary.used)} used · ${formatCurrency(bonusSummary.available)} available. Bonus is app credit and cannot be withdrawn as cash.`}
+        meta={`+${formatCurrency(selectedOffer.rewardsBonus)} with this add funds`}
+        text="Bonus is app credit for eligible GA Robot purchases and cannot be withdrawn as cash."
         tone="warning"
         style={styles.bonusNotice}
       />
 
       <AppCard style={styles.totalCard}>
         <View style={styles.totalRows}>
+          <View style={styles.totalRow}>
+            <Text style={styles.totalRowLabel}>Current Available Balance</Text>
+            <Text style={styles.totalRowValue}>{formatCurrency(walletBalance)}</Text>
+          </View>
           <View style={styles.totalRow}>
             <Text style={styles.totalRowLabel}>Cash Balance</Text>
             <Text style={styles.totalRowValue}>+{formatCurrency(selectedOffer.amount)}</Text>
@@ -216,30 +137,6 @@ export function TopUpScreen({
       </AppCard>
 
     </Screen>
-  );
-}
-
-function AutoReloadChip({
-  label,
-  selected,
-  onPress
-}: {
-  label: string;
-  selected: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <TouchableOpacity
-      accessibilityRole="button"
-      accessibilityState={{ selected }}
-      activeOpacity={0.84}
-      style={[styles.autoReloadChip, selected && styles.autoReloadChipSelected]}
-      onPress={onPress}
-    >
-      <Text style={[styles.autoReloadChipText, selected && styles.autoReloadChipTextSelected]}>
-        {label}
-      </Text>
-    </TouchableOpacity>
   );
 }
 
@@ -273,108 +170,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "700",
     marginTop: 5
-  },
-  autoReloadCard: {
-    marginTop: spacing.sm,
-    gap: spacing.sm,
-    paddingVertical: 10
-  },
-  autoReloadHeader: {
-    minHeight: 48,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm
-  },
-  autoReloadIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: radii.md,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: statusColors.success.subtleBackground
-  },
-  autoReloadCopy: {
-    flex: 1,
-    minWidth: 0
-  },
-  autoReloadTitle: {
-    color: colors.ink,
-    ...typography.label
-  },
-  autoReloadText: {
-    color: colors.muted,
-    fontSize: 11,
-    lineHeight: 15,
-    fontWeight: "600",
-    marginTop: 3
-  },
-  autoReloadSwitch: {
-    width: 40,
-    height: 24,
-    padding: 2,
-    borderRadius: 999,
-    justifyContent: "center",
-    backgroundColor: statusColors.neutral.background
-  },
-  autoReloadSwitchOn: {
-    backgroundColor: colors.success
-  },
-  autoReloadSwitchKnob: {
-    width: 20,
-    height: 20,
-    borderRadius: 999,
-    backgroundColor: colors.surface
-  },
-  autoReloadSwitchKnobOn: {
-    alignSelf: "flex-end"
-  },
-  autoReloadSettings: {
-    gap: spacing.sm,
-    paddingTop: spacing.sm,
-    borderTopColor: colors.line,
-    borderTopWidth: StyleSheet.hairlineWidth
-  },
-  autoReloadSettingGroup: {
-    gap: spacing.sm
-  },
-  autoReloadSettingLabel: {
-    color: colors.muted,
-    fontSize: 11,
-    lineHeight: 14,
-    fontWeight: "700"
-  },
-  autoReloadChipRow: {
-    flexDirection: "row",
-    gap: spacing.sm
-  },
-  autoReloadChip: {
-    flex: 1,
-    minHeight: 38,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.md,
-    backgroundColor: colors.canvas,
-    borderColor: colors.line,
-    borderWidth: StyleSheet.hairlineWidth
-  },
-  autoReloadChipSelected: {
-    backgroundColor: colors.success,
-    borderColor: colors.success
-  },
-  autoReloadChipText: {
-    color: colors.ink,
-    fontSize: 12,
-    lineHeight: 15,
-    fontWeight: "700"
-  },
-  autoReloadChipTextSelected: {
-    color: colors.onDark
-  },
-  autoReloadFootnote: {
-    color: colors.muted,
-    fontSize: 10,
-    lineHeight: 14,
-    fontWeight: "600"
   },
   levelPill: {
     minHeight: 34,

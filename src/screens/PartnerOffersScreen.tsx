@@ -16,6 +16,7 @@ import type { ProductDisplayMode } from "../state/appState";
 
 type PartnerOffersScreenProps = {
   initialOfferId?: string | null;
+  backLabel?: string;
   claimedCouponIds: string[];
   pointsBalance: number;
   pointsInstantRedeemEnabled: boolean;
@@ -27,6 +28,7 @@ type PartnerOffersScreenProps = {
 
 export function PartnerOffersScreen({
   initialOfferId,
+  backLabel = "Back to Home",
   claimedCouponIds,
   pointsBalance,
   pointsInstantRedeemEnabled,
@@ -68,7 +70,7 @@ export function PartnerOffersScreen({
       eyebrow="Local partners"
       scrollKey="partner-offers"
       onBack={onBack}
-      backLabel="Back to Home"
+      backLabel={backLabel}
     >
       <AppCard style={styles.summaryCard}>
         <View>

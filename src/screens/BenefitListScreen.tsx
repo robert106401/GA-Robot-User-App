@@ -10,10 +10,11 @@ import { colors } from "../theme";
 
 type BenefitListScreenProps = {
   onBack: () => void;
+  backLabel?: string;
   xpBalance: number;
 };
 
-export function BenefitListScreen({ onBack, xpBalance }: BenefitListScreenProps) {
+export function BenefitListScreen({ onBack, backLabel = "Back to Account", xpBalance }: BenefitListScreenProps) {
   const { currentTier } = getTierProgress(xpBalance);
   const visual = getTierVisual(currentTier);
   const benefitRows = getBenefitRows();
@@ -47,7 +48,7 @@ export function BenefitListScreen({ onBack, xpBalance }: BenefitListScreenProps)
       eyebrow="Compare all tiers"
       scrollKey="tier-benefits"
       onBack={onBack}
-      backLabel="Back to Me"
+      backLabel={backLabel}
     >
       <AppCard
         style={[

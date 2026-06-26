@@ -36,6 +36,7 @@ type CashierScreenProps = {
   walletBalanceLabel?: string;
   paymentNoticeText?: string;
   lowBalanceNoticeText?: string;
+  backLabel?: string;
   onBack: () => void;
   onOpenPaymentMethod: () => void;
   onSelectPayment: (methodId: PaymentMethodId) => void;
@@ -59,6 +60,7 @@ export function CashierScreen({
   walletBalanceLabel = "Available Balance",
   paymentNoticeText,
   lowBalanceNoticeText,
+  backLabel = "Back",
   onBack,
   onOpenPaymentMethod,
   onSelectPayment,
@@ -110,7 +112,7 @@ export function CashierScreen({
         eyebrow={paymentState === "complete" ? (isPaymentError ? "Payment Failed" : "Payment Complete") : "Processing Payment"}
         scrollKey={`cashier-${paymentState}`}
         onBack={paymentState === "complete" ? undefined : onBack}
-        backLabel="Back"
+        backLabel={backLabel}
         fixedHeader
         bottomAction={
           paymentState === "complete" && paymentOutcome ? (
@@ -176,7 +178,7 @@ export function CashierScreen({
       eyebrow={eyebrow}
       scrollKey={`cashier-${title}`}
       onBack={onBack}
-      backLabel="Back"
+      backLabel={backLabel}
       fixedHeader
       bottomAction={
         <View style={styles.bottomActionWrap}>

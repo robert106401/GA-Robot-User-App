@@ -469,6 +469,13 @@ function renderScreen(
     closeHomeSurfaces();
     closeMeSurfaces();
   };
+  const checkoutBackLabel = pendingVmCheckoutOrder
+    ? "Back to Scan & Pay"
+    : isCartOpen
+      ? "Back to Cart"
+      : activeSkuId
+        ? "Back to Product"
+        : "Back";
   const activeHomeOrder = orders.find((order) => order.id === activeHomeOrderId);
   if (activeHomeOrder) {
     const backLabel =
@@ -507,6 +514,7 @@ function renderScreen(
           usedBenefitRecords={usedBenefitRecords}
           initialAsset={checkoutBenefitAsset}
           initialFilter="All"
+          backLabel="Back to Checkout"
           onBack={() => setCheckoutBenefitAsset(null)}
         />
       );
@@ -515,6 +523,7 @@ function renderScreen(
       <CheckoutScreen
         items={checkoutItems}
         vmOrder={pendingVmCheckoutOrder ?? undefined}
+        backLabel={checkoutBackLabel}
         walletBalance={walletBalance}
         walletBalances={walletBalances}
         pointsBalance={pointsBalance}
@@ -547,11 +556,9 @@ function renderScreen(
           <TopUpScreen
             walletBalance={walletBalance}
             walletBalances={walletBalances}
-            bonusSummary={bonusSummary}
             xpBalance={xpBalance}
-            autoReloadSettings={autoReloadSettings}
-            onChangeAutoReloadSettings={onChangeAutoReloadSettings}
             onBack={() => setIsTopUpOpen(false)}
+            backLabel="Back to Home"
             onOpenCashier={(result) => {
               setCashierPayment(getEligibleDefaultPaymentMethod(defaultPaymentMethod, "topup"));
               setCashierCardId(currentPaymentCardId);
@@ -565,6 +572,7 @@ function renderScreen(
         return (
           <MissionsScreen
             onBack={() => setIsMissionsOpen(false)}
+            backLabel="Back to Home"
             checkInStreak={checkInStreak}
             checkedInToday={lastCheckInDate === getLocalDateKey()}
             addFundsTotal={getFirstTopUpAmount(paymentHistory)}
@@ -647,6 +655,7 @@ function renderScreen(
             usedBenefitRecords={usedBenefitRecords}
             initialAsset={activeCouponAsset}
             initialFilter={couponInitialFilter}
+            backLabel="Back to Home"
             onBack={() => {
               setActiveCouponAsset(null);
               setCouponInitialFilter("All");
@@ -665,6 +674,7 @@ function renderScreen(
             onClaimCoupon={handleClaimCoupon}
             onPurchaseOffer={handlePurchasePartnerOffer}
             offerDisplayMode={resolveProductDisplayMode(productDisplayPreferences, "allPartnerOffers")}
+            backLabel="Back to Home"
             onBack={() => {
               setActivePartnerOfferId(null);
               setIsPartnerOffersOpen(false);
@@ -673,7 +683,7 @@ function renderScreen(
         );
       }
       if (isBenefitListOpen) {
-        return <BenefitListScreen onBack={() => setIsBenefitListOpen(false)} xpBalance={xpBalance} />;
+        return <BenefitListScreen onBack={() => setIsBenefitListOpen(false)} backLabel="Back to Home" xpBalance={xpBalance} />;
       }
       if (isCartOpen) {
         return (
@@ -799,6 +809,7 @@ function renderScreen(
         return (
           <TierScreen
             onBack={() => setIsTierOpen(false)}
+            backLabel="Back to Rewards"
             onOpenExpHistory={() => setIsExpHistoryOpen(true)}
             xpBalance={xpBalance}
             xpHistory={xpHistory}
@@ -835,6 +846,7 @@ function renderScreen(
         return (
           <MissionsScreen
             onBack={() => setIsMissionsOpen(false)}
+            backLabel="Back to Rewards"
             checkInStreak={checkInStreak}
             checkedInToday={lastCheckInDate === getLocalDateKey()}
             addFundsTotal={getFirstTopUpAmount(paymentHistory)}
@@ -869,6 +881,7 @@ function renderScreen(
             usedBenefitRecords={usedBenefitRecords}
             initialAsset={activeCouponAsset}
             initialFilter={couponInitialFilter}
+            backLabel="Back to Rewards"
             onBack={() => {
               setActiveCouponAsset(null);
               setCouponInitialFilter("All");
@@ -887,6 +900,7 @@ function renderScreen(
             onClaimCoupon={handleClaimCoupon}
             onPurchaseOffer={handlePurchasePartnerOffer}
             offerDisplayMode={resolveProductDisplayMode(productDisplayPreferences, "allPartnerOffers")}
+            backLabel="Back to Rewards"
             onBack={() => {
               setActivePartnerOfferId(null);
               setIsPartnerOffersOpen(false);
@@ -895,7 +909,7 @@ function renderScreen(
         );
       }
       if (isBenefitListOpen) {
-        return <BenefitListScreen onBack={() => setIsBenefitListOpen(false)} xpBalance={xpBalance} />;
+        return <BenefitListScreen onBack={() => setIsBenefitListOpen(false)} backLabel="Back to Rewards" xpBalance={xpBalance} />;
       }
       return (
         <RewardsScreen
@@ -989,12 +1003,9 @@ function renderScreen(
           <TopUpScreen
             walletBalance={walletBalance}
             walletBalances={walletBalances}
-            bonusSummary={bonusSummary}
             xpBalance={xpBalance}
-            autoReloadSettings={autoReloadSettings}
-            onChangeAutoReloadSettings={onChangeAutoReloadSettings}
             onBack={() => setIsTopUpOpen(false)}
-            backLabel="Back to Me"
+            backLabel="Back to Account"
             onOpenCashier={(result) => {
               setCashierPayment(getEligibleDefaultPaymentMethod(defaultPaymentMethod, "topup"));
               setCashierCardId(currentPaymentCardId);
@@ -1017,6 +1028,7 @@ function renderScreen(
         return (
           <MissionsScreen
             onBack={() => setIsMissionsOpen(false)}
+            backLabel="Back to Account"
             checkInStreak={checkInStreak}
             checkedInToday={lastCheckInDate === getLocalDateKey()}
             addFundsTotal={getFirstTopUpAmount(paymentHistory)}
@@ -1045,6 +1057,7 @@ function renderScreen(
         return (
           <TierScreen
             onBack={() => setIsTierOpen(false)}
+            backLabel="Back to Account"
             onOpenExpHistory={() => setIsExpHistoryOpen(true)}
             xpBalance={xpBalance}
             xpHistory={xpHistory}
@@ -1061,6 +1074,7 @@ function renderScreen(
             usedBenefitRecords={usedBenefitRecords}
             initialAsset={activeCouponAsset}
             initialFilter={couponInitialFilter}
+            backLabel="Back to Account"
             onBack={() => {
               setActiveCouponAsset(null);
               setCouponInitialFilter("All");
@@ -1069,20 +1083,42 @@ function renderScreen(
           />
         );
       }
+      if (isPartnerOffersOpen) {
+        return (
+          <PartnerOffersScreen
+            initialOfferId={activePartnerOfferId}
+            claimedCouponIds={claimedCouponIds}
+            pointsBalance={pointsBalance}
+            pointsInstantRedeemEnabled={pointsInstantRedeemEnabled}
+            onClaimCoupon={handleClaimCoupon}
+            onPurchaseOffer={handlePurchasePartnerOffer}
+            offerDisplayMode={resolveProductDisplayMode(productDisplayPreferences, "allPartnerOffers")}
+            backLabel="Back to Account"
+            onBack={() => {
+              setActivePartnerOfferId(null);
+              setIsPartnerOffersOpen(false);
+            }}
+          />
+        );
+      }
       if (isBenefitListOpen) {
-        return <BenefitListScreen onBack={() => setIsBenefitListOpen(false)} xpBalance={xpBalance} />;
+        return <BenefitListScreen onBack={() => setIsBenefitListOpen(false)} backLabel="Back to Account" xpBalance={xpBalance} />;
       }
       return (
           <MeScreen
             profile={userProfile}
             initialPage={meInitialPage}
+            onBack={() => {
+              closeMeSurfaces();
+              setActiveTab("home");
+            }}
+            backLabel="Back to Home"
             onSaveProfile={setUserProfile}
             onOpenVouchers={() => openCouponAssets(null, "Vouchers")}
             onOpenCoupons={() => openCouponAssets(null, "Coupons")}
             onOpenBenefits={() => setIsBenefitListOpen(true)}
             onOpenPartnerOffers={() => {
-              closeMeSurfaces();
-              setActiveTab("home");
+              setActivePartnerOfferId(null);
               setIsPartnerOffersOpen(true);
             }}
             onOpenTier={() => setIsTierOpen(true)}
@@ -1896,6 +1932,26 @@ export default function App() {
     ? cashierCheckout.request.vmOrder ? "VM order" : "Prepaid order"
     : "Add Funds";
   const cashierEyebrow = cashierTopUp ? "Wallet cashier" : cashierGift ? "Gift cashier" : cashierCheckout ? cashierCheckout.request.vmOrder ? "VM app pay" : "Order cashier" : "Secure cashier";
+  const cashierBackLabel = cashierTopUp
+    ? "Back to Add Funds"
+    : cashierGift
+      ? "Back to Gift Details"
+      : cashierCheckout
+        ? cashierCheckout.request.vmOrder
+          ? "Back to VM Order Checkout"
+          : "Back to Checkout"
+        : cashierPartnerOffer
+          ? "Back to Offer Detail"
+          : "Back";
+  const paymentMethodBackLabel = cashierPartnerOffer || cashierTopUp || cashierGift || cashierCheckout
+    ? "Back to Cashier"
+    : activePaymentMode === "topup"
+      ? "Back to Add Funds"
+      : activePaymentMode === "gift"
+        ? "Back to Gift"
+        : activePaymentMode === "checkout"
+          ? "Back to Checkout"
+          : "Back";
   const cashierSummaryTitle = cashierPartnerOffer
     ? cashierPartnerOffer.title
     : cashierTopUp
@@ -2094,6 +2150,7 @@ export default function App() {
             walletBalanceLabel={cashierWalletBalanceLabel}
             paymentNoticeText={cashierPaymentNoticeText}
             lowBalanceNoticeText={cashierLowBalanceNoticeText}
+            backLabel={cashierBackLabel}
             onBack={() => {
               if (cashierGift) {
                 cashierGift.onCancel();
@@ -2103,7 +2160,6 @@ export default function App() {
               setCashierTopUp(null);
               setCashierGift(null);
               setCashierCheckout(null);
-              setPendingVmCheckoutOrder(null);
               setCashierRecentCard(null);
               setCashierCardId("");
             }}
@@ -2154,6 +2210,7 @@ export default function App() {
             walletBalance={cashierPartnerOffer ? cashBalance : walletBalance}
             availableMethods={availablePaymentMethods}
             initialPage={activePaymentInitialPage}
+            backLabel={paymentMethodBackLabel}
             payable={activePaymentPayable}
             onBack={() => {
               setActivePaymentInitialPage("list");

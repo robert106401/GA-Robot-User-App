@@ -29,7 +29,7 @@ export function TransactionHistoryScreen({ onBack }: TransactionHistoryScreenPro
       eyebrow="All payment activity"
       scrollKey="transaction-history"
       onBack={onBack}
-      backLabel="Back to Me"
+      backLabel="Back to Account"
     >
       <AppCard style={styles.infoCard}>
         <View style={styles.infoIcon}>

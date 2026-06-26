@@ -15,6 +15,7 @@ type PaymentMethodSelectionScreenProps = {
   payable?: number;
   availableMethods: PaymentMethod[];
   initialPage?: "list" | "add-method";
+  backLabel?: string;
   onBack: () => void;
   onSelect: (methodId: PaymentMethodId) => void;
   onAddPaymentMethod?: (methodId: PaymentMethodId, card?: SavedPaymentCard, makeDefault?: boolean) => void;
@@ -27,6 +28,7 @@ export function PaymentMethodSelectionScreen({
   payable = 0,
   availableMethods,
   initialPage = "list",
+  backLabel = "Back",
   onBack,
   onSelect,
   onAddPaymentMethod
@@ -37,6 +39,7 @@ export function PaymentMethodSelectionScreen({
   const [expiry, setExpiry] = useState("");
   const [cvv, setCvv] = useState("");
   const [makeDefault, setMakeDefault] = useState(false);
+  const startedOnAddMethod = initialPage === "add-method";
   const methods = availableMethods.filter((method) => method.id !== "paypal");
   const walletCoversPayable = walletBalance >= payable;
   const addablePaymentMethods = paymentMethods.filter((method) =>
@@ -75,7 +78,13 @@ export function PaymentMethodSelectionScreen({
     const cardDigits = cardNumber.replace(/\D/g, "");
     const canSave = cardDigits.length >= 12 && Boolean(cardholder.trim()) && isValidCardExpiry(expiry) && cvv.replace(/\D/g, "").length >= 3;
     return (
-      <Screen title="Add Card" eyebrow="Payment method" scrollKey={`payment-add-card-${mode}`} onBack={() => setPage("add-method")}>
+      <Screen
+        title="Add Card"
+        eyebrow="Payment method"
+        scrollKey={`payment-add-card-${mode}`}
+        onBack={() => setPage("add-method")}
+        backLabel="Back to Add Payment Method"
+      >
         <Text style={styles.pageIntro}>Add a card for app payments and future orders.</Text>
         <Text style={styles.fieldLabel}>Card number</Text>
         <TextInput
@@ -145,7 +154,13 @@ export function PaymentMethodSelectionScreen({
 
   if (page === "add-method") {
     return (
-      <Screen title="Add Payment Method" eyebrow="Payment method" scrollKey={`payment-add-method-${mode}`} onBack={() => setPage("list")}>
+      <Screen
+        title="Add Payment Method"
+        eyebrow="Payment method"
+        scrollKey={`payment-add-method-${mode}`}
+        onBack={startedOnAddMethod ? onBack : () => setPage("list")}
+        backLabel={startedOnAddMethod ? backLabel : "Back to Payment Methods"}
+      >
         <Text style={styles.pageIntro}>Add a payment method for app payments and future orders.</Text>
         <View style={styles.methodList}>
           {addablePaymentMethods.map((method) => (
@@ -202,6 +217,7 @@ export function PaymentMethodSelectionScreen({
       }
       scrollKey={`payment-method-selection-${mode}`}
       onBack={onBack}
+      backLabel={backLabel}
     >
       <InlineNotice
         icon="wallet-outline"
